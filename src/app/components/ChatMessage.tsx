@@ -24,7 +24,9 @@ export function ChatMessage({ message, isUser, timestamp }: ChatMessageProps) {
               : "bg-gray-100 text-gray-900"
           }`}
         >
-          <p className="text-sm whitespace-pre-wrap break-words">{message}</p>
+          <p className="text-sm whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ 
+            __html: message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+          }} />
         </div>
         <span className="text-xs text-gray-500 mt-1">{timestamp}</span>
       </div>

@@ -1,6 +1,102 @@
+interface Message {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: string;
+}
+
+export interface Topic {
+  id: string;
+  title: string;
+  duration: number; // in minutes
+  notes: string;
+}
+
+export function getTopicsFromSyllabus(syllabusName: string): Topic[] {
+  // Simulate syllabus breakdown
+  return [
+    {
+      id: "t1",
+      title: "OOPS Concepts",
+      duration: 20,
+      notes: `OOPS (Object-Oriented Programming System) is a programming approach where software is designed using objects instead of just functions and logic.
+
+An object represents a real-world entity and contains:
+• Data → variables (attributes)
+• Behavior → methods (functions)
+
+**Why OOPS?**
+OOPS helps to:
+1. Make programs easy to understand
+2. Improve reusability
+3. Reduce complexity`
+    },
+    {
+      id: "t2",
+      title: "Data Structures",
+      duration: 20,
+      notes: `Data structures are special ways of organizing and storing data in a computer so that it can be used efficiently.
+
+Common types:
+• **Arrays**: Linear collection
+• **Linked Lists**: Nodes with pointers
+• **Stacks**: LIFO (Last In, First Out)
+• **Queues**: FIFO (First In, First Out)`
+    },
+    {
+      id: "t3",
+      title: "Data Types",
+      duration: 15,
+      notes: `Data types define the type of data a variable can hold. 
+
+In most languages, these include:
+• **Integers**: Whole numbers
+• **Floats**: Decimal numbers
+• **Strings**: Text
+• **Booleans**: True or False`
+    }
+  ];
+}
+
 // Mock AI responses for the study planner chatbot
-export function generateStudyResponse(question: string): string {
+export function generateStudyResponse(question: string, history: Message[] = []): string {
   const lowerQuestion = question.toLowerCase();
+
+  // Simple Context Awareness for follow-ups
+  const lastAiMessage = [...history].reverse().find(m => !m.isUser)?.text.toLowerCase() || "";
+
+  if (lowerQuestion.includes("more") || lowerQuestion.includes("explain") || lowerQuestion.includes("detail")) {
+    if (lastAiMessage.includes("mern")) {
+      return `Sure! Let's dive deeper into the MERN stack. 
+      
+Most developers start with React for the frontend and Node.js with Express for the backend. MongoDB is great because you can store data exactly how it looks in your JavaScript code (JSON). 
+
+Which part of the MERN stack would you like to build first?`;
+    }
+    if (lastAiMessage.includes("react hook")) {
+      return `Definitely. React Hooks like **useEffect** are used for "side effects". 
+
+For example, if you want to fetch data from an API when a component first loads, you use \`useEffect(() => { ... }, [])\`. 
+
+Do you want to see a code example of a specific hook?`;
+    }
+  }
+
+  if (lowerQuestion.includes("example") || lowerQuestion.includes("code")) {
+    if (lastAiMessage.includes("mern") || lastAiMessage.includes("mongo")) {
+      return `Here is a simple example of a MongoDB schema using Mongoose:
+
+\`\`\`javascript
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+\`\`\`
+
+This defines what a "User" looks like in your database.`;
+    }
+  }
 
   // MERN Stack
   if (lowerQuestion.includes("mern") || lowerQuestion.includes("mern stack")) {
