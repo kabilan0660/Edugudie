@@ -46,6 +46,8 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
   const [isTyping, setIsTyping] = useState(false);
@@ -86,7 +88,7 @@ export default function App() {
       }
       
       try {
-        const res = await fetch("/api/auth/me", {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
           headers: { "x-auth-token": token }
         });
         if (res.ok) {
@@ -137,7 +139,7 @@ export default function App() {
     if (!user) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/conversations", {
+      const res = await fetch(`${API_BASE}/api/conversations`, {
         headers: { "x-auth-token": token || "" }
       });
       if (res.ok) {
@@ -154,7 +156,7 @@ export default function App() {
     if (!user) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/syllabi", {
+      const res = await fetch(`${API_BASE}/api/syllabi`, {
         headers: { "x-auth-token": token || "" }
       });
       if (res.ok) {
@@ -181,7 +183,7 @@ export default function App() {
       const firstUserMsg = currentMessages.find(m => m.isUser)?.text.substring(0, 30) || "New Chat";
       const title = firstUserMsg + (firstUserMsg.length >= 30 ? "..." : "");
 
-      const res = await fetch("/api/conversations", {
+      const res = await fetch(`${API_BASE}/api/conversations`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -273,7 +275,7 @@ export default function App() {
     if (user) {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/syllabi", {
+        const res = await fetch(`${API_BASE}/api/syllabi`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -300,7 +302,7 @@ export default function App() {
     const token = localStorage.getItem("token");
     setIsTyping(true);
     try {
-      const res = await fetch(`/api/conversations/${id}`, {
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
         headers: { "x-auth-token": token || "" }
       });
       if (res.ok) {
@@ -318,7 +320,7 @@ export default function App() {
   const handleDeleteConversation = async (id: string) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`/api/conversations/${id}`, {
+      const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
         method: "DELETE",
         headers: { "x-auth-token": token || "" }
       });
@@ -386,7 +388,7 @@ export default function App() {
           onDeleteSyllabus={async (id: string) => {
             const token = localStorage.getItem("token");
             try {
-              const res = await fetch(`/api/syllabi/${id}`, {
+              const res = await fetch(`${API_BASE}/api/syllabi/${id}`, {
                 method: "DELETE",
                 headers: { "x-auth-token": token || "" }
               });

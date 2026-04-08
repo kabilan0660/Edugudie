@@ -12,6 +12,8 @@ interface AuthPageProps {
   onLoginSuccess: (user: any) => void;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +30,7 @@ export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
@@ -52,7 +54,7 @@ export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
