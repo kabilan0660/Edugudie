@@ -1,20 +1,18 @@
 import dotenv from 'dotenv';
-dotenv.config({ override: true });
-
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Gemini AI client using environment variable
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 import User from './models/User.js';
 import Conversation from './models/Conversation.js';
 import Syllabus from './models/Syllabus.js';
 
-// dotenv.config() is now called at the top of the file
+dotenv.config({ override: true });
+
+// Initialize Gemini AI client using environment variable
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
