@@ -1,19 +1,26 @@
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Gemini AI client using environment variable
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 import User from './models/User.js';
 import Conversation from './models/Conversation.js';
 import Syllabus from './models/Syllabus.js';
 
-dotenv.config();
+// dotenv.config() is now called at the top of the file
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-key';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/edugudie';
+console.log('🛢️ Using MONGODB_URI:', MONGODB_URI);
 
 app.use(cors());
 app.use(express.json());
@@ -77,7 +84,14 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    // Return more specific error info for debugging
+    if (error.name === 'MongoServerError' && error.code === 11000) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server error', detail: error.message });
   }
 });
 
@@ -206,6 +220,93 @@ app.delete('/api/conversations/:id', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// ─── AI ROUTES ──────────────────────────────────────────────────────────────
+
+// POST /api/chat - Conversational AI (Gemini)
+app.post('/api/chat', auth, async (req, res) => {
+  if (!genAI) {
+    return res.status(503).json({ message: 'AI service not configured. Add GEMINI_API_KEY to backend .env' });
+  }
+
+  try {
+    const { message, history = [] } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: 'Message is required' });
+    }
+
+    // Convert history to Gemini chat format
+    const geminiHistory = history.map(m => ({
+      role: m.isUser ? 'user' : 'model',
+      parts: [{ text: m.text }],
+    }));
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const chat = model.startChat({ history: geminiHistory });
+    const response = await chat.sendMessage(message);
+    const reply = response?.response?.text?.() || response?.text?.() || '';
+    res.json({ reply });
+  } catch (err) {
+    console.error('POST /api/chat Error:', err);
+    res.status(500).json({ message: 'AI service error', error: err.message });
+  }
+});
+
+// POST /api/syllabus/generate - AI Syllabus Analyzer (Gemini with JSON output)
+app.post('/api/syllabus/generate', auth, async (req, res) => {
+  if (!genAI) {
+    return res.status(503).json({ message: 'AI service not configured. Add GEMINI_API_KEY to backend .env' });
+  }
+
+  try {
+    const { syllabusText, title } = req.body;
+    if (!syllabusText) {
+      return res.status(400).json({ message: 'syllabusText is required' });
+    }
+
+    const prompt = `You are a study planner AI. Analyze the following syllabus content and break it into study topics.
+For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
+Return ONLY valid JSON matching the schema.
+
+Syllabus Title: "${title || 'My Syllabus'}"
+Syllabus Content:
+---
+${syllabusText}
+---`;
+
+    const schema = {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          id: { type: 'STRING', description: 'Unique short ID like t1' },
+          title: { type: 'STRING', description: 'Topic title' },
+          duration: { type: 'INTEGER', description: 'Estimated minutes' },
+          notes: { type: 'STRING', description: 'Concise study notes' },
+        },
+        required: ['id', 'title', 'duration', 'notes'],
+      },
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+      },
+    });
+
+    const response = await model.generateContent(prompt);
+    const jsonText = response?.response?.text?.() || response?.text?.() || '';
+    const topics = JSON.parse(jsonText);
+    res.json({ topics });
+  } catch (err) {
+    console.error('POST /api/syllabus/generate Error:', err);
+    res.status(500).json({ message: 'AI syllabus generation failed', error: err.message });
+  }
+});
+
+// ─── SYLLABUS ROUTES ─────────────────────────────────────────────────────────
 
 // SYLLABUS ROUTES
 
