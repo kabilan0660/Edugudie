@@ -8,13 +8,12 @@ import { Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface AuthPageProps {
-  onBack: () => void;
   onLoginSuccess: (user: any) => void;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
+export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Login state
@@ -65,8 +64,24 @@ export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
       });
       const data = await response.json();
       if (response.ok) {
-        toast.success("Registration successful! Please login.");
-        // Switch to login tab could be done here if using controlled tabs
+        toast.success("Registration successful! Logging in...");
+        // Automatically login the user
+        try {
+          const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: registerEmail, password: registerPassword }),
+          });
+          const loginData = await loginResponse.json();
+          if (loginResponse.ok) {
+            localStorage.setItem("token", loginData.token);
+            onLoginSuccess(loginData.user);
+          } else {
+            toast.error("Auto-login failed. Please log in manually.");
+          }
+        } catch (error) {
+          toast.error("Auto-login failed. Please log in manually.");
+        }
       } else {
         toast.error(data.message || "Registration failed");
       }
@@ -80,14 +95,7 @@ export default function AuthPage({ onBack, onLoginSuccess }: AuthPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
-        <Button 
-          variant="ghost" 
-          onClick={onBack} 
-          className="mb-4 hover:bg-white/50"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
+
 
         <Card className="shadow-xl border-t-4 border-t-purple-500">
           <CardHeader className="text-center">
