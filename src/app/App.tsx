@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { ChatMessage } from "./components/ChatMessage";
 import { ChatInput } from "./components/ChatInput";
+import { API_BASE } from "../config";
 import { ScrollArea } from "./components/ui/scroll-area";
 import { generateStudyResponse } from "./utils/studyResponses";
 import { Sparkles, Clock } from "lucide-react";
@@ -46,7 +47,7 @@ const DEFAULT_WELCOME_MESSAGE: Message = {
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([DEFAULT_WELCOME_MESSAGE]);
@@ -55,7 +56,7 @@ export default function App() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [timerDuration, setTimerDuration] = useState(5); 
   const [tempTimerInput, setTempTimerInput] = useState("5");
-  const [view, setView] = useState<"dashboard" | "auth">("dashboard");
+  const [view, setView] = useState<"dashboard" | "auth">("auth");
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -215,44 +216,68 @@ export default function App() {
       isUser: true,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    
-    // Update local UI
+
+    // Update local UI immediately
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setIsTyping(true);
 
-    // AI Response Simulation
-    setTimeout(async () => {
-      const response = generateStudyResponse(text, currentMessages);
+    try {
+      const token = localStorage.getItem("token");
+
+      // Build history excluding the welcome message and the current user message
+      const history = currentMessages.slice(0, -1).filter(m => m.id !== 'welcome');
+
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token || "",
+        },
+        body: JSON.stringify({ message: text, history }),
+      });
+
+      let replyText = "I'm sorry, I encountered an error. Please try again.";
+      if (res.ok) {
+        const data = await res.json();
+        replyText = data.reply;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        replyText = err.message || replyText;
+        toast.error("AI service error: " + replyText);
+      }
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response,
+        text: replyText,
         isUser: false,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      
+
       let finalMessages: Message[] = [];
       setMessages(prev => {
         finalMessages = [...prev, aiMessage];
         return finalMessages;
       });
-      
-      setIsTyping(false);
 
       if (user) {
-        // ALWAYS use the ref value for the ID to avoid closure bugs
         const currentId = activeConversationIdRef.current;
         const savedId = await saveConversation(finalMessages, currentId);
         if (savedId && savedId !== currentId) {
           setActiveConversationId(savedId);
         }
       }
-      
+
       if (!isTimerActive) setIsTimerActive(true);
-    }, 800 + Math.random() * 500);
+    } catch (err) {
+      console.error("Chat error:", err);
+      toast.error("Failed to reach AI. Is the backend running?");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
-  const handleTopicSelect = (topic: Topic) => {
+  const handleTopicSelect = async (topic: Topic) => {
     setActiveTopic(topic);
     // Automatically start timer for the topic duration
     setTimerDuration(topic.duration);
@@ -262,12 +287,68 @@ export default function App() {
     // Add a system message for the topic
     const topicMessage: Message = {
       id: `topic-${topic.id}`,
-      text: `Starting session: **${topic.title}**\n\n${topic.notes}`,
+      text: `Starting session: **${topic.title}**`,
       isUser: false,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
+    
     setMessages(prev => [...prev, topicMessage]);
     toast.info(`Timer started for ${topic.duration} minutes`);
+
+    // Automatically request detailed learning notes for this topic from Gemini
+    setIsTyping(true);
+    try {
+      const token = localStorage.getItem("token");
+      const prompt = `Please generate comprehensive, detailed study notes and explanations for the topic: "${topic.title}". 
+Include key concepts, definitions, clear explanations, and practical examples (or code blocks if relevant) to help me learn it. Use clear markdown formatting with headers.`;
+      
+      const history = [...messages.filter(m => m.id !== 'welcome'), topicMessage];
+
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token || "",
+        },
+        body: JSON.stringify({ 
+          message: prompt, 
+          history 
+        }),
+      });
+
+      let replyText = "Failed to generate detailed study notes automatically. Feel free to ask me questions about this topic here!";
+      if (res.ok) {
+        const data = await res.json();
+        replyText = data.reply;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        replyText = err.message || replyText;
+      }
+
+      const aiMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: replyText,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setMessages(prev => {
+        const finalMessages = [...prev, aiMessage];
+        if (user) {
+          saveConversation(finalMessages, activeConversationIdRef.current).then(savedId => {
+            if (savedId && savedId !== activeConversationIdRef.current) {
+              setActiveConversationId(savedId);
+            }
+          });
+        }
+        return finalMessages;
+      });
+    } catch (err) {
+      console.error("Failed to automatically generate topic notes:", err);
+      toast.error("Failed to fetch study notes from AI.");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleTopicsGenerated = async (newTopics: Topic[], title: string) => {
@@ -354,7 +435,6 @@ export default function App() {
     return (
       <>
         <AuthPage 
-          onBack={() => setView("dashboard")} 
           onLoginSuccess={(data) => {
             setUser(data);
             setView("dashboard");
@@ -410,6 +490,7 @@ export default function App() {
             setUser(null);
             localStorage.removeItem("token");
             handleNewChat();
+            setView("auth");
           }}
         />
       )}
