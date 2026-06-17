@@ -257,20 +257,10 @@ app.post('/api/syllabus/generate', auth, async (req, res) => {
   }
 
   try {
-    const { syllabusText, title } = req.body;
-    if (!syllabusText) {
-      return res.status(400).json({ message: 'syllabusText is required' });
+    const { syllabusText, image, mimeType, title } = req.body;
+    if (!syllabusText && !image) {
+      return res.status(400).json({ message: 'Either syllabusText or image is required' });
     }
-
-    const prompt = `You are a study planner AI. Analyze the following syllabus content and break it into study topics.
-For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
-Return ONLY valid JSON matching the schema.
-
-Syllabus Title: "${title || 'My Syllabus'}"
-Syllabus Content:
----
-${syllabusText}
----`;
 
     const schema = {
       type: 'ARRAY',
@@ -294,7 +284,38 @@ ${syllabusText}
       },
     });
 
-    const response = await model.generateContent(prompt);
+    let promptParts = [];
+    if (image && mimeType) {
+      // Multimodal request with image
+      promptParts.push({
+        inlineData: {
+          data: image,
+          mimeType: mimeType
+        }
+      });
+      promptParts.push({
+        text: `You are a study planner AI. Analyze the uploaded syllabus image and break it into study topics.
+For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
+Return ONLY valid JSON matching the schema.
+
+Syllabus Title: "${title || 'My Syllabus'}"`
+      });
+    } else {
+      // Text-only request
+      promptParts.push({
+        text: `You are a study planner AI. Analyze the following syllabus content and break it into study topics.
+For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
+Return ONLY valid JSON matching the schema.
+
+Syllabus Title: "${title || 'My Syllabus'}"
+Syllabus Content:
+---
+${syllabusText}
+---`
+      });
+    }
+
+    const response = await model.generateContent(promptParts);
     const jsonText = response?.response?.text?.() || response?.text?.() || '';
     const topics = JSON.parse(jsonText);
     res.json({ topics });

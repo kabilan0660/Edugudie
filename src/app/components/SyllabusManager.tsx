@@ -13,7 +13,8 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Topic, getTopicsFromSyllabus } from "../utils/studyResponses";
-
+import { toast } from "sonner";
+const API_BASE = import.meta.env.VITE_API_URL || '';
 interface SyllabusManagerProps {
   onTopicsGenerated: (topics: Topic[], title: string) => void;
   onTopicSelect: (topic: Topic) => void;
@@ -29,19 +30,73 @@ export function SyllabusManager({
 }: SyllabusManagerProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [syllabusTitle, setSyllabusTitle] = useState("");
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to analyze a syllabus');
+      return;
+    }
     setIsUploading(true);
-    // Simulate API delay
-    setTimeout(() => {
-      const generatedTopics = getTopicsFromSyllabus(fileName || "My Syllabus");
-      const title = syllabusTitle || fileName || "My Syllabus";
-      onTopicsGenerated(generatedTopics, title);
+    try {
+      let payload: any = { title: syllabusTitle || fileName || 'My Syllabus' };
+
+      if (selectedFile) {
+        if (selectedFile.type.startsWith('image/')) {
+          // Read image file as base64
+          const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              const base64 = result.split(',')[1]; // Strip "data:image/...;base64," prefix
+              resolve(base64);
+            };
+            reader.onerror = () => reject(new Error("Failed to read image file"));
+            reader.readAsDataURL(selectedFile);
+          });
+          payload.image = base64Data;
+          payload.mimeType = selectedFile.type;
+        } else {
+          // Read text file contents
+          const syllabusText = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve((e.target?.result as string) || "");
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.readAsText(selectedFile);
+          });
+          payload.syllabusText = syllabusText;
+        }
+      } else {
+        payload.syllabusText = "No syllabus content provided";
+      }
+
+      const res = await fetch(`${API_BASE}/api/syllabus/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || 'Failed to generate topics');
+        return;
+      }
+      const data = await res.json();
+      const generatedTopics = data.topics;
+      onTopicsGenerated(generatedTopics, syllabusTitle || fileName || 'My Syllabus');
+    } catch (e) {
+      console.error('Syllabus generation error:', e);
+      toast.error('Error contacting AI service');
+    } finally {
       setIsUploading(false);
-      setFileName("");
-      setSyllabusTitle("");
-    }, 1500);
+      setFileName('');
+      setSelectedFile(null);
+      setSyllabusTitle('');
+    }
   };
 
   if (topics.length === 0) {
@@ -75,7 +130,12 @@ export function SyllabusManager({
                     <input 
                       type="file" 
                       className="hidden" 
-                      onChange={(e) => setFileName(e.target.files?.[0]?.name || "")} 
+                      accept="image/*,.txt,.md,.json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setSelectedFile(file);
+                        setFileName(file?.name || "");
+                      }} 
                     />
                   </label>
                 </Button>
