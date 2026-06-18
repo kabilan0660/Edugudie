@@ -14,7 +14,7 @@ import {
 import { Input } from "./ui/input";
 import { Topic, getTopicsFromSyllabus } from "../utils/studyResponses";
 import { toast } from "sonner";
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { API_BASE } from "../../config";
 interface SyllabusManagerProps {
   onTopicsGenerated: (topics: Topic[], title: string) => void;
   onTopicSelect: (topic: Topic) => void;

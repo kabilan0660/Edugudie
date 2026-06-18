@@ -11,7 +11,7 @@ interface AuthPageProps {
   onLoginSuccess: (user: any) => void;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { API_BASE } from "../../config";
 
 export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
   const [isLoading, setIsLoading] = useState(false);
