@@ -269,9 +269,17 @@ export default function App() {
       }
 
       if (!isTimerActive) setIsTimerActive(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Chat error:", err);
       toast.error("Failed to reach AI. Is the backend running?");
+      
+      const errorMsg: Message = {
+        id: `chat-error-${Date.now()}`,
+        text: `⚠️ **Chat Failed:** ${err?.message || "Unknown error"}. \n\n*Please ensure your backend is running at \`${API_BASE}\` and your \`GEMINI_API_KEY\` is valid (should start with \`AIzaSy\` or \`AQ\`).*`,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
     }
@@ -350,9 +358,17 @@ Include key concepts, definitions, clear explanations, and practical examples (o
           setActiveConversationId(savedId);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to automatically generate topic notes:", err);
       toast.error("Failed to fetch detailed study notes from AI.");
+      
+      const errorMsg: Message = {
+        id: `error-${topic.id}-${Date.now()}`,
+        text: `⚠️ **Failed to generate detailed notes:** ${err?.message || "Unknown error"}. \n\n*Please ensure your backend is running at \`${API_BASE}\` and your \`GEMINI_API_KEY\` is valid (should start with \`AIzaSy\` or \`AQ\`).*`,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages([topicMessage, notesMessage, errorMsg]);
     } finally {
       setIsTyping(false);
     }
