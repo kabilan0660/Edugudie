@@ -286,23 +286,31 @@ export default function App() {
     
     // Add a system message for the topic
     const topicMessage: Message = {
-      id: `topic-${topic.id}`,
+      id: `topic-${topic.id}-${Date.now()}`,
       text: `Starting session: **${topic.title}**`,
       isUser: false,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
+
+    // Add the AI message with the actual topic notes from the syllabus
+    const notesMessage: Message = {
+      id: `notes-${topic.id}-${Date.now()}`,
+      text: topic.notes || "No study notes found in the syllabus for this topic.",
+      isUser: false,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
     
-    setMessages(prev => [...prev, topicMessage]);
+    setMessages([topicMessage, notesMessage]);
     toast.info(`Timer started for ${topic.duration} minutes`);
 
-    // Automatically request detailed learning notes for this topic from Gemini
+    // Automatically request detailed learning notes for this topic from Gemini (like ChatGPT/Gemini)
     setIsTyping(true);
     try {
       const token = localStorage.getItem("token");
       const prompt = `Please generate comprehensive, detailed study notes and explanations for the topic: "${topic.title}". 
 Include key concepts, definitions, clear explanations, and practical examples (or code blocks if relevant) to help me learn it. Use clear markdown formatting with headers.`;
       
-      const history = [...messages.filter(m => m.id !== 'welcome'), topicMessage];
+      const history = [topicMessage, notesMessage];
 
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
@@ -326,26 +334,25 @@ Include key concepts, definitions, clear explanations, and practical examples (o
       }
 
       const aiMessage: Message = {
-        id: (Date.now() + 2).toString(),
+        id: `details-${topic.id}-${Date.now()}`,
         text: replyText,
         isUser: false,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      setMessages(prev => {
-        const finalMessages = [...prev, aiMessage];
-        if (user) {
-          saveConversation(finalMessages, activeConversationIdRef.current).then(savedId => {
-            if (savedId && savedId !== activeConversationIdRef.current) {
-              setActiveConversationId(savedId);
-            }
-          });
+      const finalMessages = [topicMessage, notesMessage, aiMessage];
+      setMessages(finalMessages);
+
+      if (user) {
+        const currentId = activeConversationIdRef.current;
+        const savedId = await saveConversation(finalMessages, currentId);
+        if (savedId && savedId !== currentId) {
+          setActiveConversationId(savedId);
         }
-        return finalMessages;
-      });
+      }
     } catch (err) {
       console.error("Failed to automatically generate topic notes:", err);
-      toast.error("Failed to fetch study notes from AI.");
+      toast.error("Failed to fetch detailed study notes from AI.");
     } finally {
       setIsTyping(false);
     }

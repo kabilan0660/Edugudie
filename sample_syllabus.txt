@@ -1,0 +1,25 @@
+Syllabus: Introduction to Machine Learning
+
+Module 1: Basics of Linear Regression
+- What is supervised learning?
+- Linear regression model and hypothesis representation.
+- Cost function: Mean Squared Error (MSE).
+- Gradient Descent algorithm for optimization.
+
+Module 2: Logistic Regression & Classification
+- Difference between regression and classification.
+- Sigmoid activation function and hypothesis.
+- Decision boundary.
+- Cost function for logistic regression (Binary Cross Entropy).
+
+Module 3: Neural Networks Introduction
+- Biological vs Artificial neurons.
+- Multi-layer Perceptron (MLP) architecture.
+- Activation functions: ReLU, Sigmoid, Tanh.
+- Concept of forward propagation and backpropagation.
+
+Module 4: Model Evaluation and Overfitting
+- Training, Validation, and Test sets.
+- Understanding bias vs variance.
+- Techniques to handle overfitting: L1 and L2 regularization.
+- Evaluation metrics: Accuracy, Precision, Recall, F1-Score.
