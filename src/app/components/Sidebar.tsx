@@ -70,14 +70,14 @@ export function Sidebar({
             {syllabi.map((syllabus) => (
               <div key={syllabus._id} className="space-y-1">
                 <div 
-                  className="group flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-800/50 text-slate-300 transition-all"
+                  className="group flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-800/50 text-slate-300 transition-all min-w-0"
                   onClick={() => toggleFolder(syllabus._id)}
                 >
-                  {expandedFolders[syllabus._id] ? <ChevronDown className="size-3 text-slate-500" /> : <ChevronRight className="size-3 text-slate-500" />}
-                  <Folder className="size-4 text-blue-400" />
-                  <span className="flex-1 truncate text-sm font-medium">{syllabus.title}</span>
+                  {expandedFolders[syllabus._id] ? <ChevronDown className="size-3 text-slate-500 flex-shrink-0" /> : <ChevronRight className="size-3 text-slate-500 flex-shrink-0" />}
+                  <Folder className="size-4 text-blue-400 flex-shrink-0" />
+                  <span className="flex-1 truncate text-sm font-medium min-w-0">{syllabus.title}</span>
                   <button 
-                    className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+                    className="p-1 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteSyllabus(syllabus._id);
@@ -117,15 +117,15 @@ export function Sidebar({
               <div 
                 key={conv._id}
                 className={cn(
-                  "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-sm",
+                  "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-sm min-w-0",
                   activeId === conv._id ? "bg-slate-800 text-white" : "hover:bg-slate-800/50 text-slate-400 hover:text-slate-200"
                 )}
                 onClick={() => onSelectConversation(conv._id)}
               >
                 <MessageSquare className="size-4 flex-shrink-0 text-purple-400" />
-                <span className="flex-1 truncate">{conv.title}</span>
+                <span className="flex-1 truncate min-w-0">{conv.title}</span>
                 <button 
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                  className="p-1 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteConversation(conv._id);
