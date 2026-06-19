@@ -75,9 +75,9 @@ export function Sidebar({
                 >
                   {expandedFolders[syllabus._id] ? <ChevronDown className="size-3 text-slate-500 flex-shrink-0" /> : <ChevronRight className="size-3 text-slate-500 flex-shrink-0" />}
                   <Folder className="size-4 text-blue-400 flex-shrink-0" />
-                  <span className="flex-1 truncate text-sm font-medium min-w-0">{syllabus.title}</span>
+                  <span className="flex-1 truncate text-sm font-medium max-w-[170px]">{syllabus.title}</span>
                   <button 
-                    className="p-1 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="p-1 text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteSyllabus(syllabus._id);
@@ -123,9 +123,9 @@ export function Sidebar({
                 onClick={() => onSelectConversation(conv._id)}
               >
                 <MessageSquare className="size-4 flex-shrink-0 text-purple-400" />
-                <span className="flex-1 truncate min-w-0">{conv.title}</span>
+                <span className="flex-1 truncate max-w-[170px]">{conv.title}</span>
                 <button 
-                  className="p-1 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+                  className="p-1 text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteConversation(conv._id);
