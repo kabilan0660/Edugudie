@@ -77,7 +77,7 @@ export function Sidebar({
                   <Folder className="size-4 text-blue-400" />
                   <span className="flex-1 truncate text-sm font-medium">{syllabus.title}</span>
                   <button 
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                    className="p-1 text-slate-500 hover:text-red-400 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteSyllabus(syllabus._id);
