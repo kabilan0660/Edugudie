@@ -81,16 +81,23 @@ export function SyllabusManager({
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.message || 'Failed to generate topics');
+        const text = await res.text().catch(() => "");
+        let errorMessage = "Failed to generate topics";
+        try {
+          const parsed = JSON.parse(text);
+          errorMessage = parsed.message || errorMessage;
+        } catch {
+          errorMessage = text ? text.substring(0, 100) : errorMessage;
+        }
+        toast.error(errorMessage);
         return;
       }
       const data = await res.json();
       const generatedTopics = data.topics;
       onTopicsGenerated(generatedTopics, syllabusTitle || fileName || 'My Syllabus');
-    } catch (e) {
+    } catch (e: any) {
       console.error('Syllabus generation error:', e);
-      toast.error('Error contacting AI service');
+      toast.error('Error contacting AI service: ' + (e?.message || 'Unknown error'));
     } finally {
       setIsUploading(false);
       setFileName('');
