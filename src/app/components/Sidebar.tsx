@@ -48,7 +48,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-72 flex flex-col h-full bg-slate-900 text-slate-200 border-r border-slate-800">
+    <div className="w-72 flex flex-col h-full bg-slate-900 text-slate-200 border-r border-slate-800 overflow-x-hidden">
       <div className="p-4">
         <Button 
           variant="outline" 
@@ -60,15 +60,15 @@ export function Sidebar({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-2">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 px-2 w-full min-w-0">
+        <div className="space-y-4 w-full min-w-0">
           {/* Study Folders Section */}
-          <div className="space-y-1">
+          <div className="space-y-1 w-full min-w-0">
             <div className="px-2 py-2 text-xs font-semibold uppercase text-slate-500 tracking-wider">
               Study Folders
             </div>
             {syllabi.map((syllabus) => (
-              <div key={syllabus._id} className="space-y-1">
+              <div key={syllabus._id} className="space-y-1 w-full min-w-0">
                 <div 
                   className="group flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-800/50 text-slate-300 transition-all min-w-0"
                   onClick={() => toggleFolder(syllabus._id)}
@@ -88,18 +88,18 @@ export function Sidebar({
                 </div>
                 
                 {expandedFolders[syllabus._id] && (
-                  <div className="ml-4 pl-4 border-l border-slate-800 space-y-1 animate-in slide-in-from-left-2 duration-200">
+                  <div className="ml-4 pl-4 border-l border-slate-800 space-y-1 animate-in slide-in-from-left-2 duration-200 w-full min-w-0">
                     {syllabus.topics.map((topic: any, idx: number) => (
                       <div 
                         key={topic.id}
                         className={cn(
-                          "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-xs",
+                          "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-xs w-full min-w-0",
                           activeTopicId === topic.id ? "bg-blue-900/40 text-blue-100" : "hover:bg-slate-800/50 text-slate-400 hover:text-slate-200"
                         )}
                         onClick={() => onSelectTopic(topic, syllabus._id)}
                       >
                         <FileText className="size-3 flex-shrink-0" />
-                        <span className="flex-1 truncate">{idx + 1}. {topic.title}</span>
+                        <span className="flex-1 truncate min-w-0">{idx + 1}. {topic.title}</span>
                       </div>
                     ))}
                   </div>
@@ -109,7 +109,7 @@ export function Sidebar({
           </div>
 
           {/* Regular Chats Section */}
-          <div className="space-y-1">
+          <div className="space-y-1 w-full min-w-0">
             <div className="px-2 py-2 text-xs font-semibold uppercase text-slate-500 tracking-wider">
               Recent Chats
             </div>
