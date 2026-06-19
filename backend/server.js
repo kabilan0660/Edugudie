@@ -234,11 +234,33 @@ app.post('/api/chat', auth, async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    // Convert history to Gemini chat format
-    const geminiHistory = history.map(m => ({
-      role: m.isUser ? 'user' : 'model',
-      parts: [{ text: m.text }],
-    }));
+    // Convert history to Gemini chat format and sanitize it
+    let geminiHistory = [];
+    
+    // 1. Map history and combine consecutive turns of the same role
+    for (const m of history) {
+      const role = m.isUser ? 'user' : 'model';
+      const text = m.text || '';
+      
+      if (geminiHistory.length > 0 && geminiHistory[geminiHistory.length - 1].role === role) {
+        // Combine text with previous turn of the same role
+        geminiHistory[geminiHistory.length - 1].parts[0].text += '\n\n' + text;
+      } else {
+        geminiHistory.push({
+          role,
+          parts: [{ text }]
+        });
+      }
+    }
+    
+    // 2. Gemini chat history must start with a 'user' turn.
+    // If it starts with 'model', prepend a system/user intro message.
+    if (geminiHistory.length > 0 && geminiHistory[0].role === 'model') {
+      geminiHistory.unshift({
+        role: 'user',
+        parts: [{ text: 'Please start my study session and provide the notes.' }]
+      });
+    }
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const chat = model.startChat({ history: geminiHistory });
