@@ -48,7 +48,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-72 flex flex-col h-full bg-slate-900 text-slate-200 border-r border-slate-800 overflow-x-hidden">
+    <aside className="w-72 flex flex-col h-full bg-slate-900 text-slate-200 border-r border-slate-800 overflow-x-hidden">
       <div className="p-4">
         <Button 
           variant="outline" 
@@ -157,6 +157,6 @@ export function Sidebar({
           <span>Logout</span>
         </Button>
       </div>
-    </div>
+    </aside>
   );
 }

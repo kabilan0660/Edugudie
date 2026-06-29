@@ -5,11 +5,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import dns from 'node:dns';
 import User from './models/User.js';
 import Conversation from './models/Conversation.js';
 import Syllabus from './models/Syllabus.js';
 
+// Override default DNS servers to bypass querySrv ECONNREFUSED on certain ISP networks
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 dotenv.config({ override: true });
+
 
 // Initialize Gemini AI client using environment variable
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
@@ -19,6 +24,12 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-key';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/edugudie';
 console.log('🛢️ Using MONGODB_URI:', MONGODB_URI);
+
+// Logger middleware for active API requests
+app.use((req, res, next) => {
+  console.log(`📡 [${new Date().toLocaleTimeString()}] ${req.method} request received at ${req.url}`);
+  next();
+});
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -293,9 +304,11 @@ app.post('/api/syllabus/generate', auth, async (req, res) => {
           id: { type: 'STRING', description: 'Unique short ID like t1' },
           title: { type: 'STRING', description: 'Topic title' },
           duration: { type: 'INTEGER', description: 'Estimated minutes' },
-          notes: { type: 'STRING', description: 'Concise study notes' },
+          notes: { type: 'STRING', description: 'Brief overall summary' },
+          advancedNotes: { type: 'STRING', description: 'Detailed advanced learning notes with deep concepts, complex explanations, formulas, and edge cases suitable for toppers.' },
+          friendlyNotes: { type: 'STRING', description: 'Simplified, easy-to-understand learning notes with simple terminology, analogies, and step-by-step explanations suitable for low achievers.' },
         },
-        required: ['id', 'title', 'duration', 'notes'],
+        required: ['id', 'title', 'duration', 'notes', 'advancedNotes', 'friendlyNotes'],
       },
     };
 
@@ -318,7 +331,7 @@ app.post('/api/syllabus/generate', auth, async (req, res) => {
       });
       promptParts.push({
         text: `You are a study planner AI. Analyze the uploaded syllabus image and break it into study topics.
-For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
+For each topic, estimate a study duration in minutes (10-45). Provide a brief summary in 'notes', advanced learning notes for toppers in 'advancedNotes', and simple, friendly notes for low achievers in 'friendlyNotes'.
 Return ONLY valid JSON matching the schema.
 
 Syllabus Title: "${title || 'My Syllabus'}"`
@@ -327,7 +340,7 @@ Syllabus Title: "${title || 'My Syllabus'}"`
       // Text-only request
       promptParts.push({
         text: `You are a study planner AI. Analyze the following syllabus content and break it into study topics.
-For each topic, estimate a study duration in minutes (10-45) and provide concise notes.
+For each topic, estimate a study duration in minutes (10-45). Provide a brief summary in 'notes', advanced learning notes for toppers in 'advancedNotes', and simple, friendly notes for low achievers in 'friendlyNotes'.
 Return ONLY valid JSON matching the schema.
 
 Syllabus Title: "${title || 'My Syllabus'}"

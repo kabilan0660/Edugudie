@@ -17,6 +17,8 @@ const syllabusSchema = new mongoose.Schema({
       title: String,
       duration: Number,
       notes: String,
+      advancedNotes: String,
+      friendlyNotes: String,
       conversationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Conversation'

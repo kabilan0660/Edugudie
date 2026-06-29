@@ -10,6 +10,8 @@ export interface Topic {
   title: string;
   duration: number; // in minutes
   notes: string;
+  advancedNotes?: string;
+  friendlyNotes?: string;
 }
 
 export function getTopicsFromSyllabus(syllabusName: string): Topic[] {

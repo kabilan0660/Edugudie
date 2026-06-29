@@ -70,6 +70,7 @@ export default function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [activeTopic, setActiveTopic] = useState<Topic | null>(null);
   const [activeSyllabusId, setActiveSyllabusId] = useState<string | null>(null);
+  const [learningMode, setLearningMode] = useState<"friendly" | "advanced">("friendly");
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -126,14 +127,65 @@ export default function App() {
     }
   }, [messages, isTyping]);
 
+  // Audio completion synthesizer chime
+  const playCompletionSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const audioCtx = new AudioContextClass();
+      
+      const playNote = (freq: number, start: number, duration: number) => {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, start);
+        
+        gainNode.gain.setValueAtTime(0.15, start);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+      
+      const now = audioCtx.currentTime;
+      // Ascending C-major arpeggio chime (C5 -> E5 -> G5 -> C6)
+      playNote(523.25, now, 0.35);
+      playNote(659.25, now + 0.12, 0.35);
+      playNote(783.99, now + 0.24, 0.35);
+      playNote(1046.50, now + 0.36, 0.7);
+    } catch (err) {
+      console.error("Failed to play audio completion chime:", err);
+    }
+  };
+
   // Timer logic
   useEffect(() => {
     if (!isTimerActive || timeLeft <= 0) return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => Math.max(0, prev - 1));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft, isTimerActive]);
+
+  // Handle timer completion side effects
+  useEffect(() => {
+    if (timeLeft === 0 && isTimerActive) {
+      setIsTimerActive(false);
+      playCompletionSound();
+      toast.success("Focus Session Completed! 🎉", {
+        description: `Great job! You spent ${timerDuration} minutes focusing on "${activeTopic?.title || 'this topic'}". Take a short break!`,
+        duration: 8000
+      });
+    }
+  }, [timeLeft, isTimerActive, activeTopic, timerDuration]);
 
   // Fetch Conversations
   const fetchConversations = useCallback(async () => {
@@ -285,39 +337,37 @@ export default function App() {
     }
   };
 
-  const handleTopicSelect = async (topic: Topic) => {
-    setActiveTopic(topic);
-    // Automatically start timer for the topic duration
-    setTimerDuration(topic.duration);
-    setTimeLeft(topic.duration * 60);
-    setIsTimerActive(true);
-    
-    // Add a system message for the topic
+  const loadTopicNotes = async (topic: Topic, mode: "friendly" | "advanced") => {
+    const noteText = mode === "friendly" 
+      ? (topic.friendlyNotes || topic.notes)
+      : (topic.advancedNotes || topic.notes);
+
     const topicMessage: Message = {
       id: `topic-${topic.id}-${Date.now()}`,
-      text: `Starting session: **${topic.title}**`,
+      text: `Starting session: **${topic.title}** (${mode === "friendly" ? "Friendly Notes 👶" : "Advanced Notes 🚀"})`,
       isUser: false,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    // Add the AI message with the actual topic notes from the syllabus
     const notesMessage: Message = {
       id: `notes-${topic.id}-${Date.now()}`,
-      text: topic.notes || "No study notes found in the syllabus for this topic.",
+      text: noteText || "No study notes found in the syllabus for this topic.",
       isUser: false,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    
-    setMessages([topicMessage, notesMessage]);
-    toast.info(`Timer started for ${topic.duration} minutes`);
 
-    // Automatically request detailed learning notes for this topic from Gemini (like ChatGPT/Gemini)
+    setMessages([topicMessage, notesMessage]);
     setIsTyping(true);
+
     try {
       const token = localStorage.getItem("token");
-      const prompt = `Please generate comprehensive, detailed study notes and explanations for the topic: "${topic.title}". 
-Include key concepts, definitions, clear explanations, and practical examples (or code blocks if relevant) to help me learn it. Use clear markdown formatting with headers.`;
-      
+      let prompt = "";
+      if (mode === "friendly") {
+        prompt = `Please generate simple, friendly, easy-to-understand study notes and explanations for the topic: "${topic.title}". Use simple terminology, analogies, and step-by-step explanations suitable for a beginner or low achiever.`;
+      } else {
+        prompt = `Please generate in-depth, comprehensive advanced study notes and explanations for the topic: "${topic.title}". Include deep concepts, advanced formulas, edge cases, optimizations, and technical details suitable for a topper or advanced learner.`;
+      }
+
       const history = [topicMessage, notesMessage];
 
       const res = await fetch(`${API_BASE}/api/chat`, {
@@ -332,7 +382,7 @@ Include key concepts, definitions, clear explanations, and practical examples (o
         }),
       });
 
-      let replyText = "Failed to generate detailed study notes automatically. Feel free to ask me questions about this topic here!";
+      let replyText = `Failed to generate detailed ${mode} study notes automatically. Feel free to ask me questions about this topic here!`;
       if (res.ok) {
         const data = await res.json();
         replyText = data.reply;
@@ -371,6 +421,26 @@ Include key concepts, definitions, clear explanations, and practical examples (o
       setMessages([topicMessage, notesMessage, errorMsg]);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleTopicSelect = async (topic: Topic) => {
+    setActiveTopic(topic);
+    // Automatically start timer for the topic duration
+    setTimerDuration(topic.duration);
+    setTimeLeft(topic.duration * 60);
+    setIsTimerActive(true);
+    toast.info(`Timer started for ${topic.duration} minutes`);
+    
+    // Load topic notes based on active learningMode
+    loadTopicNotes(topic, learningMode);
+  };
+
+  const handleToggleMode = (mode: "friendly" | "advanced") => {
+    setLearningMode(mode);
+    if (activeTopic) {
+      loadTopicNotes(activeTopic, mode);
+      toast.success(`Switched to ${mode === "friendly" ? "Friendly Notes 👶" : "Advanced Notes 🚀"}`);
     }
   };
 
@@ -586,11 +656,45 @@ Include key concepts, definitions, clear explanations, and practical examples (o
 
         <div className="flex-1 overflow-hidden p-0 md:p-6 bg-slate-50 flex items-center justify-center">
             <Card className="w-full max-w-4xl h-full flex flex-col shadow-xl border-none overflow-hidden bg-white gap-0 relative">
-                {activeTopic && isTimerActive && (
+                 {activeTopic && isTimerActive && (
                   <div className="absolute top-6 right-6 size-16 rounded-full bg-slate-900 border-4 border-white shadow-xl flex items-center justify-center z-20 animate-in fade-in zoom-in">
                     <span className="text-white font-mono font-bold text-sm tracking-tighter">
                       {formatTime(timeLeft)}
                     </span>
+                  </div>
+                )}
+                {activeTopic && messages.filter(m => m.id !== 'welcome').length > 0 && (
+                  <div className="px-6 py-4 bg-purple-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 shadow-sm animate-in slide-in-from-top duration-300">
+                    <div>
+                      <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Active Study Session</span>
+                      <h2 className="font-extrabold text-slate-800 text-lg md:text-xl leading-tight mt-0.5">{activeTopic.title}</h2>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl border border-slate-300/40">
+                      <Button
+                        size="sm"
+                        variant={learningMode === "friendly" ? "default" : "ghost"}
+                        onClick={() => handleToggleMode("friendly")}
+                        className={`rounded-xl px-4 py-1.5 text-xs font-bold transition-all ${
+                          learningMode === "friendly"
+                            ? "bg-white text-slate-900 shadow-sm hover:bg-white"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-300/50"
+                        }`}
+                      >
+                        👶 Friendly Notes
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={learningMode === "advanced" ? "default" : "ghost"}
+                        onClick={() => handleToggleMode("advanced")}
+                        className={`rounded-xl px-4 py-1.5 text-xs font-bold transition-all ${
+                          learningMode === "advanced"
+                            ? "bg-slate-900 text-white hover:bg-slate-900"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-300/50"
+                        }`}
+                      >
+                        🚀 Advanced Notes
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>

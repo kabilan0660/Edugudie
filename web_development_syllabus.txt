@@ -1,0 +1,152 @@
+Syllabus: Full-Stack Web Development (MERN Stack)
+
+Module 1: HTML Introduction
+- History of HTML and the World Wide Web.
+- Basic structure of an HTML document: <!DOCTYPE html>, <html>, <head>, <body>.
+- Core elements: headings (h1-h6), paragraphs, links (a), images (img).
+- Lists: ordered (ol), unordered (ul), and description (dl).
+- HTML5 Semantic elements: <header>, <footer>, <nav>, <section>, <article>, <aside>.
+- Forms and user input: form, input types, textarea, select, labels, and validation.
+
+Module 2: CSS Styling & Layouts
+- What is CSS? Inline, internal, and external styles.
+- Selectors: Element, Class, ID, Attribute, and Pseudo-classes.
+- The Box Model: content, padding, border, and margin.
+- CSS Units: px, em, rem, %, vh, vw.
+- Colors, backgrounds, typography, and fonts (Google Fonts).
+- Layout types: Normal flow, floats, relative/absolute positioning.
+- Responsive Web Design basics: Media queries, viewport meta tag.
+
+Module 3: CSS Grid & Flexbox
+- Flexbox fundamentals: flex container and flex items.
+- Flexbox alignment: justify-content, align-items, flex-direction, flex-wrap.
+- Flex-grow, flex-shrink, and flex-basis properties.
+- CSS Grid layout: grid container, grid tracks (rows/columns), and grid cells.
+- Defining templates: grid-template-columns, grid-template-rows, grid-template-areas.
+- Grid placement and gaps: grid-column, grid-row, gap/grid-gap.
+- Creating advanced responsive grids using repeat() and minmax().
+
+Module 4: JavaScript Fundamentals
+- JavaScript execution environment (browser console, script tags).
+- Variables: var, let, and const; Block scope vs function scope.
+- Primitive Data Types: String, Number, Boolean, Null, Undefined, Symbol, BigInt.
+- Operators: Arithmetic, comparison, logical, assignment, ternary.
+- JavaScript Functions: declaration, expressions, arrow functions, parameter defaults.
+- Scope chain, lexical scope, closures, and IIFE.
+- Introduction to the Document Object Model (DOM) and event listeners.
+
+Module 5: Control Flow: Conditions & Loops
+- Conditional logic: if, else if, else, and switch statements.
+- Strict comparison (===) vs loose comparison (==).
+- Truthy and Falsy values in JavaScript.
+- Loop statements: for, while, and do-while.
+- Advanced loops: for...in (for objects) and for...of (for arrays/iterables).
+- Loop control: break and continue statements.
+- Basic algorithms: finding max/min, reversing strings, calculating factorials.
+
+Module 6: Data Structures: Arrays & Objects
+- JavaScript Arrays: initialization, indexing, and basic methods (push, pop, shift, unshift).
+- Iterators and ES6 helper methods: forEach, map, filter, reduce, find, some, every.
+- Multi-dimensional arrays.
+- JavaScript Objects: key-value pairs, dot and bracket notation.
+- Object methods, nested objects, and prototype chain.
+- JSON (JavaScript Object Notation): parse() and stringify().
+- ES6 Destructuring (array & object), spread operator (...), and rest parameters.
+
+Module 7: Asynchronous JavaScript & REST APIs
+- The Event Loop: Call stack, callback queue, microtask queue, and Web APIs.
+- Callback functions and Callback Hell.
+- JavaScript Promises: pending, fulfilled, rejected, .then(), .catch(), and .finally().
+- Modern async/await syntax and error handling with try/catch.
+- Fetch API: Making HTTP requests (GET, POST, PUT, DELETE).
+- Working with external REST APIs and parsing JSON responses.
+
+Module 8: MERN Stack Architecture Overview
+- Introduction to the MERN Stack: MongoDB, Express.js, React, Node.js.
+- Client-Server Architecture: Request-Response cycle.
+- Three-tier Architecture: Presentation layer (React), Application layer (Node/Express), Database layer (MongoDB).
+- REST (Representational State Transfer) architecture style and constraints.
+- Front-to-Back flow: how a button click in React updates a record in MongoDB.
+
+Module 9: React.js Introduction
+- What is React? Single Page Applications (SPA) vs Multi-Page Applications.
+- Virtual DOM and diffing algorithm.
+- Setting up a React project with Vite.
+- JSX (JavaScript XML) syntax rules and expressions.
+- Functional Components and file structure.
+- Component Props: passing data down, children prop.
+- Event handling in React.
+
+Module 10: React State Management & Hooks
+- Understanding Component State: state vs props.
+- The useState hook: managing local variable updates.
+- Controlled components: handling form inputs in React.
+- Component Lifecycle and the useEffect hook: side effects, dependencies array, cleanup.
+- Custom Hooks: extracting reusable stateful logic.
+- Lifting state up to parent components.
+- Introduction to global state management (Context API).
+
+Module 11: MongoDB Database Basics
+- SQL vs NoSQL databases: Relational vs Document store.
+- Creating a MongoDB Atlas account and setting up a cloud cluster.
+- Database concepts: databases, collections, and documents (BSON).
+- CRUD operations in the MongoDB shell / Compass.
+- Connecting Node.js to MongoDB.
+- Mongoose ODM (Object Document Mapper): Schemas, Types, and Models.
+- Mongoose Validation and pre/post middleware hooks.
+
+Module 12: Node.js Runtime Environment
+- Introduction to Node.js and the V8 Engine.
+- Blocking vs Non-Blocking I/O operations.
+- The NPM registry: package.json, npm install, semantic versioning.
+- Node.js Core Modules: fs (file system), path, and http.
+- CommonJS modules (require/module.exports) vs ES Modules (import/export).
+- Environment Variables and the dotenv package.
+
+Module 13: Express.js Web Framework
+- What is Express.js? Setting up a basic HTTP server.
+- Routing: handling route parameters, query parameters, and route nesting.
+- Middleware: Application-level, router-level, error-handling, and third-party middleware (cors, express.json).
+- Request and Response objects: req.body, req.params, req.query, res.send, res.json, res.status.
+- Structuring Express projects: routes, controllers, models, and config folders.
+
+Module 14: RESTful API Development
+- Designing a standard API: URL naming conventions (nouns, pluralization).
+- CRUD endpoints implementation:
+  - GET /api/items (retrieve all items)
+  - GET /api/items/:id (retrieve single item)
+  - POST /api/items (create item, parsing request body)
+  - PUT /api/items/:id (update item, partial updates)
+  - DELETE /api/items/:id (delete item)
+- HTTP Status Codes: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found, 500 Server Error.
+- Input validation on backend (e.g., using express-validator).
+
+Module 15: Backend Deployment (Render)
+- Preparing Express backend for deployment: updating start scripts, listening on process.env.PORT.
+- Creating a Git repository and pushing backend code to GitHub.
+- Creating a service on Render.com.
+- Configuring environment variables (MONGODB_URI, JWT_SECRET) on Render.
+- Deploying and reading runtime logs.
+- Handling CORS configuration for production domains.
+
+Module 16: Frontend Deployment (Vercel)
+- Preparing React frontend: configuring Vite build scripts, API URLs.
+- Running production builds locally (npm run build).
+- Creating a project on Vercel and linking a GitHub repository.
+- Configuring redirect rules for single-page routing (vercel.json redirects).
+- Setting environment variables on Vercel.
+- Deploying the frontend and verifying connection to the deployed Render backend.
+
+Module 17: System Architecture & Design Pattern (Archint)
+- Software Design Patterns: MVC (Model-View-Controller) structure.
+- Clean Code principles: Separation of Concerns (SoC), DRY (Don't Repeat Yourself).
+- Database Design: referencing (normalization) vs embedding (denormalization) documents.
+- Basic security practices: password hashing (bcrypt), token-based authentication (JWT).
+- Optimizing database queries with indexing.
+
+Module 18: Course Conclusion & Best Practices
+- Putting it all together: MERN application review.
+- Project-based learning: building a portfolio.
+- Performance optimization: caching, lazy loading React components, compressing assets.
+- Advanced MERN concepts: WebSockets (real-time chat), Redux Toolkit, testing with Jest/React Testing Library.
+- Next steps in your developer journey.
