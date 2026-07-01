@@ -273,7 +273,7 @@ app.post('/api/chat', auth, async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
     const chat = model.startChat({ history: geminiHistory });
     const response = await chat.sendMessage(message);
     const reply = response?.response?.text?.() || response?.text?.() || '';
@@ -313,7 +313,7 @@ app.post('/api/syllabus/generate', auth, async (req, res) => {
     };
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-latest',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema,
